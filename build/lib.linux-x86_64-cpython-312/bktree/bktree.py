@@ -3,15 +3,28 @@ from . import _bktree_cpp # Import the C++ extension module
 class BKTree:
     def __init__(self, words, distance='Levenshtein'):
         """
-        Initializes the BKTree.
+        Initializes the BKTree with a list of words.
 
-        The BKTree is built from the provided list of words. The query method
-        will return indices corresponding to the positions in this original list.
+        The BK-Tree is a data structure specialized for finding approximate string
+        matches within a predefined dictionary (the corpus of words provided here).
+        It uses a distance metric (e.g., Levenshtein distance) to organize words
+        such that queries for similar words can be performed efficiently.
+
+        The indices returned by the `query` method will correspond to the
+        positions of words in the original `words` list provided to this constructor.
+        If duplicate words are present in the input `words` list, query results
+        will point to the index of the first occurrence of that word.
 
         Args:
-            words (list of str): A list of strings to build the tree from.
-            distance (str): The distance metric to use.
-                          Currently, only 'Levenshtein' is supported.
+            words (list[str]): A list of strings to build the tree from.
+                               An empty list is acceptable and will result in an empty tree.
+            distance (str, optional): The distance metric to use.
+                                      Defaults to 'Levenshtein'. Currently, this is
+                                      the only supported metric.
+
+        Raises:
+            TypeError: If `words` is not a list or contains non-string elements.
+            ValueError: If an unsupported `distance` metric is specified.
         """
         if not isinstance(words, list) or not all(isinstance(word, str) for word in words):
             raise TypeError("Input 'words' must be a list of strings.")
@@ -46,20 +59,32 @@ class BKTree:
         """
         Queries the BKTree for the k nearest neighbors for each query word.
 
+        For each word in `query_words`, this method finds the `k` words in the
+        original corpus (provided at initialization) that are closest to it,
+        according to the distance metric used by the tree.
+
         Args:
-            query_words (list of str): A list of query strings.
-            k (int): The number of nearest neighbors to find for each query string.
-                     Must be a positive integer.
+            query_words (list[str]): A list of query strings.
+            k (int, optional): The number of nearest neighbors to find for each
+                               query string. Defaults to 1. Must be a positive
+                               integer.
 
         Returns:
-            tuple: A tuple containing two lists:
-                   dd (list of list of int): `dd[i]` contains the distances to the
-                                             k nearest neighbors of `query_words[i]`.
-                                             Each inner list is sorted by distance.
-                   ii (list of list of int): `ii[i]` contains the indices (into the
-                                             original corpus provided at construction)
-                                             of the k nearest neighbors of `query_words[i]`.
-                                             Each inner list is sorted corresponding to `dd[i]`.
+            tuple[list[list[int]], list[list[int]]]: A tuple `(dd, ii)`:
+                - `dd`: A list of lists of integers. `dd[i]` contains the
+                  distances to the `k` nearest neighbors of `query_words[i]`.
+                  Each inner list `dd[i]` is sorted by distance. If fewer than
+                  `k` neighbors are found (e.g., if the corpus is smaller than
+                  `k`), `dd[i]` will contain all available neighbors. For an
+                  empty tree, `dd[i]` will be an empty list.
+                - `ii`: A list of lists of integers. `ii[i]` contains the
+                  indices (into the original corpus provided at construction)
+                  of the `k` nearest neighbors of `query_words[i]`. Each inner
+                  list `ii[i]` is sorted corresponding to `dd[i]`.
+
+        Raises:
+            TypeError: If `query_words` is not a list or contains non-string elements.
+            ValueError: If `k` is not a positive integer.
         """
         if not isinstance(query_words, list) or not all(isinstance(word, str) for word in query_words):
             raise TypeError("Input 'query_words' must be a list of strings.")
